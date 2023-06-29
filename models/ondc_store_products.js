@@ -12,6 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       this.belongsTo(models.ondc_store, { foreignKey: 'ondc_store_id' });
+      this.belongsTo(models.ondc_store_category, { foreignKey: 'ondc_store_category_id' });
     }
   }
   ondc_store_products.init({
@@ -27,7 +28,6 @@ module.exports = (sequelize, DataTypes) => {
     },
     ondc_product_id: {
       type: DataTypes.STRING,
-      allowNull: false
     },
     ondc_store_id: {
       type: DataTypes.UUID,

@@ -15,7 +15,6 @@ module.exports = {
       },
       ondc_product_id: {
         type: DataTypes.STRING,
-        allowNull: false
       },
       ondc_store_id: {
         type: DataTypes.UUID,

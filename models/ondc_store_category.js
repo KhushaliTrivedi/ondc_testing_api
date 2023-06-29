@@ -12,6 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       this.belongsTo(models.ondc_store, { foreignKey: 'ondc_store_id' });
+      this.belongsTo(models.category_list, { foreignKey: 'category_list_id' });
     }
   }
   ondc_store_category.init({

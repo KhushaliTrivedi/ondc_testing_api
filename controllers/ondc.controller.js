@@ -3,6 +3,9 @@ const Op = Sequelize.Op;
 const {
     ondc_store,
     ondc_store_sellers,
+    ondc_store_category,
+    ondc_store_products,
+    category_list
 } = require("../models");
 
 const axios = require("axios");
@@ -71,6 +74,7 @@ class adminOndcController {
                             await ondc_store.update({ mystore_seller_id: seller_data[i].user._id }, { where: { ondc_store_id: s_data.ondc_store_id } })
                         }
                     }
+                    add_ondc_store_products(req.body, s_data);
                     const store_data = await ondc_store.findOne({ where: { ondc_store_id: s_data.ondc_store_id } })
                     const ondc_seller_data = await ondc_store_sellers.findAll({ where: { ondc_store_id: s_data.ondc_store_id } })
                     return res.send({
@@ -163,20 +167,13 @@ class adminOndcController {
                 });
 
             if (is_verified == 1) {
-                const seller = {
-                    ondc_sellers_id: seller_data.data.user._id,
-                    role: seller_data.data.user.role
-                }
-                const update_seller = await ondc_store_sellers.update(seller, {
-                    where: { ondc_store_id: req.params.id },
-                });
                 const update_store = await ondc_store.update(req.body, {
                     where: { ondc_store_id: req.params.id, mystore_seller_id: mystore_seller_id },
                 });
 
-                if (update_store[0] && update_seller[0]) {
+                if (update_store[0]) {
                     const store_data = await ondc_store.findOne({ where: { ondc_store_id: req.params.id, mystore_seller_id: mystore_seller_id } })
-                    const seller_data = await ondc_store_sellers.findOne({ where: { ondc_store_id: req.params.id } })
+                    const seller_data = await ondc_store_sellers.findAll({ where: { ondc_store_id: req.params.id } })
                     return res.json({
                         status: "success",
                         msg: "Store Details Updated Successfully!",
@@ -192,6 +189,11 @@ class adminOndcController {
                     msg: "ONDC Store is not Verified!",
                 });
             }
+        } else {
+            return res.send({
+                status: "failure",
+                msg: "Please provide correct Store ID!",
+            });
         }
     }
 
@@ -220,6 +222,84 @@ class adminOndcController {
 
     // Get Single ONDC Store
     async get_single_ondc_stores(req, res) {
+        try {
+            var pageSize = 100;
+            var total_items = 0;
+            if (req.query.pagesize && req.query.pagesize < 100) {
+                pageSize = req.query.pagesize;
+            }
+            const pageNumber = req.query.pageNumber || 1;
+            let ondc_store_id = req.params.id;
+            let condition = {};
+            let productData = [];
+            const store_data = await ondc_store.findOne({
+                where: { ondc_store_id },
+            });
+            const catglist = await ondc_store_category.findAll({
+                where: { ondc_store_id },
+                include: category_list,
+            });
+
+            if (req.query) {
+                condition.ondc_store_id = ondc_store_id;
+                if (
+                    req.query.ondc_store_category_id &&
+                    req.query.ondc_store_category_id != ""
+                ) {
+                    productData.length = 0;
+                    const ondc_store_category_id = req.query.ondc_store_category_id;
+                    condition.ondc_store_category_id = ondc_store_category_id;
+                }
+
+                const pData = await ondc_store_products.findAndCountAll({
+                    where: condition,
+                    include: [
+                        ondc_store_category,
+                    ],
+                    attributes: { exclude: ["createdAt", "updatedAt"] },
+                    limit: pageSize,
+                    offset: (pageNumber - 1) * pageSize,
+                    raw: true,
+                });
+                total_items = pData.count;
+                productData.push(pData.rows);
+            } else {
+                productData.length = 0;
+                const pData = await ondc_store_products.findAndCountAll({
+                    where: { ondc_store_id },
+                    include: ondc_store_category,
+                    attributes: { exclude: ["createdAt", "updatedAt"] },
+                    limit: pageSize,
+                    offset: (pageNumber - 1) * pageSize,
+                });
+                total_items = pData.count;
+                productData.push(pData.rows);
+            }
+
+            if (productData) {
+                return res.send({
+                    status: "Success",
+                    msg: "Successfully fetched!",
+                    store: store_data,
+                    products: productData,
+                    total_items,
+                    page: pageNumber,
+                    perpage: pageSize,
+                    catglist,
+                });
+            } else {
+                return res.send({
+                    status: "failure",
+                    msg: "ERROR while fetching branch data!",
+                });
+            }
+        } catch (err) {
+            console.log(err);
+            return res.status(500).json({
+                status: "failure",
+                msg: err,
+            });
+        }
         try {
             if (!req.params.id) {
                 return res.send({ status: "failure", msg: "Please provide Store ID!" });
