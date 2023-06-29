@@ -6,7 +6,7 @@ const {
 } = require("../models");
 
 const axios = require("axios");
-// const { add_ondc_branch, ondc_product_sync } = require("../utils/ondc_func");
+const { add_ondc_store_products } = require("../utils/ondc_func");
 
 class adminOndcController {
     //  add ONDC Store
@@ -15,11 +15,11 @@ class adminOndcController {
             if (!req.body) {
                 return res.send({ status: "failure", msg: "Invalid Data!" });
             }
-            const { mystore_seller_id, access_key, store_url, menu_branch_id } = req.body;
+            const { access_key, store_url, menu_branch_id } = req.body;
 
             //  Find if this seller's store exist or not!
             const store = await ondc_store.findOne({
-                where: { mystore_seller_id, access_key, store_url, menu_branch_id },
+                where: { access_key, store_url, menu_branch_id },
             });
 
             if (store) {
@@ -28,12 +28,12 @@ class adminOndcController {
                     msg: "ONDC store Exist!",
                 });
             } else {
-                // Verify Seller_id and access_key
+                // Fetch Seller's Data 
                 let seller_data = {};
                 let is_verified = "";
-                let sellers_data = await axios
+                let sellers = await axios
                     .get(
-                        `${store_url}ms.sellers/${mystore_seller_id}`,
+                        `${store_url}ms.sellers`,
                         {
                             headers: {
                                 "access-key": access_key,
@@ -42,17 +42,11 @@ class adminOndcController {
                     )
                     .then((response) => {
                         is_verified = 1;
-                        seller_data = response.data
+                        seller_data = response.data.data;
                     })
                     .catch((error) => {
                         console.log(error);
-                        if (error.response.status == 404) {
-                            is_verified = 0;
-                            return res.json({
-                                status: "failure",
-                                msg: `No ONDC Store is mapped with Seller Id: ${mystore_seller_id}`,
-                            });
-                        } else if (error.response.status == 401) {
+                        if (error.response.status == 401) {
                             is_verified = 0;
                             return res.json({ status: "failure", msg: "Not Authorised!" });
                         } else {
@@ -65,13 +59,20 @@ class adminOndcController {
                     });
 
                 if (is_verified == 1) {
-                    const store_data = await ondc_store.create(req.body);
-                    const seller = {
-                        ondc_store_id: store_data.ondc_store_id,
-                        ondc_sellers_id: seller_data.data.user._id,
-                        role: seller_data.data.user.role
+                    const s_data = await ondc_store.create(req.body);
+                    for (let i = 0; i < seller_data.length; i++) {
+                        const seller = {
+                            ondc_store_id: s_data.ondc_store_id,
+                            ondc_sellers_id: seller_data[i].user._id,
+                            role: seller_data[i].user.role
+                        }
+                        const ondc_seller_data = await ondc_store_sellers.create(seller);
+                        if (seller_data[i].user.role == "superadmin") {
+                            await ondc_store.update({ mystore_seller_id: seller_data[i].user._id }, { where: { ondc_store_id: s_data.ondc_store_id } })
+                        }
                     }
-                    const ondc_seller_data = await ondc_store_sellers.create(seller);
+                    const store_data = await ondc_store.findOne({ where: { ondc_store_id: s_data.ondc_store_id } })
+                    const ondc_seller_data = await ondc_store_sellers.findAll({ where: { ondc_store_id: s_data.ondc_store_id } })
                     return res.send({
                         status: "Success",
                         msg: "Successfully added, All products will be synced in 5 minutes!",
