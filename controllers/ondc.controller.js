@@ -12,6 +12,9 @@ class adminOndcController {
     //  add ONDC Store
     async add_ondc_store(req, res) {
         try {
+            if (!req.body) {
+                return res.send({ status: "failure", msg: "Invalid Data!" });
+            }
             const { mystore_seller_id, access_key, store_url, menu_branch_id } = req.body;
 
             //  Find if this seller's store exist or not!
@@ -95,6 +98,10 @@ class adminOndcController {
 
     // Edit Single ONDC Store
     async edit_ondc_store(req, res) {
+        if (!req.params.id) {
+            return res.send({ status: "failure", msg: "Please provide Store ID!" });
+        }
+
         const find_store = await ondc_store.findOne({
             where: { ondc_store_id: req.params.id },
         });
