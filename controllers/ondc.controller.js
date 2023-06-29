@@ -235,88 +235,68 @@ class adminOndcController {
             const store_data = await ondc_store.findOne({
                 where: { ondc_store_id },
             });
-            const catglist = await ondc_store_category.findAll({
-                where: { ondc_store_id },
-                include: category_list,
-            });
+            if (store_data.active == true) {
 
-            if (req.query) {
-                condition.ondc_store_id = ondc_store_id;
-                if (
-                    req.query.ondc_store_category_id &&
-                    req.query.ondc_store_category_id != ""
-                ) {
+                const catglist = await ondc_store_category.findAll({
+                    where: { ondc_store_id },
+                    include: category_list,
+                });
+
+                if (req.query) {
+                    condition.ondc_store_id = ondc_store_id;
+                    if (
+                        req.query.ondc_store_category_id &&
+                        req.query.ondc_store_category_id != ""
+                    ) {
+                        productData.length = 0;
+                        const ondc_store_category_id = req.query.ondc_store_category_id;
+                        condition.ondc_store_category_id = ondc_store_category_id;
+                    }
+
+                    const pData = await ondc_store_products.findAndCountAll({
+                        where: condition,
+                        include: [
+                            ondc_store_category,
+                        ],
+                        attributes: { exclude: ["createdAt", "updatedAt"] },
+                        limit: pageSize,
+                        offset: (pageNumber - 1) * pageSize,
+                        raw: true,
+                    });
+                    total_items = pData.count;
+                    productData.push(pData.rows);
+                } else {
                     productData.length = 0;
-                    const ondc_store_category_id = req.query.ondc_store_category_id;
-                    condition.ondc_store_category_id = ondc_store_category_id;
+                    const pData = await ondc_store_products.findAndCountAll({
+                        where: { ondc_store_id },
+                        include: ondc_store_category,
+                        attributes: { exclude: ["createdAt", "updatedAt"] },
+                        limit: pageSize,
+                        offset: (pageNumber - 1) * pageSize,
+                    });
+                    total_items = pData.count;
+                    productData.push(pData.rows);
                 }
 
-                const pData = await ondc_store_products.findAndCountAll({
-                    where: condition,
-                    include: [
-                        ondc_store_category,
-                    ],
-                    attributes: { exclude: ["createdAt", "updatedAt"] },
-                    limit: pageSize,
-                    offset: (pageNumber - 1) * pageSize,
-                    raw: true,
-                });
-                total_items = pData.count;
-                productData.push(pData.rows);
-            } else {
-                productData.length = 0;
-                const pData = await ondc_store_products.findAndCountAll({
-                    where: { ondc_store_id },
-                    include: ondc_store_category,
-                    attributes: { exclude: ["createdAt", "updatedAt"] },
-                    limit: pageSize,
-                    offset: (pageNumber - 1) * pageSize,
-                });
-                total_items = pData.count;
-                productData.push(pData.rows);
-            }
-
-            if (productData) {
-                return res.send({
-                    status: "Success",
-                    msg: "Successfully fetched!",
-                    store: store_data,
-                    products: productData,
-                    total_items,
-                    page: pageNumber,
-                    perpage: pageSize,
-                    catglist,
-                });
-            } else {
-                return res.send({
-                    status: "failure",
-                    msg: "ERROR while fetching branch data!",
-                });
-            }
-        } catch (err) {
-            console.log(err);
-            return res.status(500).json({
-                status: "failure",
-                msg: err,
-            });
-        }
-        try {
-            if (!req.params.id) {
-                return res.send({ status: "failure", msg: "Please provide Store ID!" });
-            }
-            const store_data = await ondc_store.findOne({ where: { ondc_store_id: req.params.id } });
-            if (store_data.length != 0) {
-                if (store_data.active == true) {
+                if (productData) {
                     return res.send({
                         status: "Success",
                         msg: "Successfully fetched!",
-                        branches: store_data,
+                        store: store_data,
+                        products: productData,
+                        total_items,
+                        page: pageNumber,
+                        perpage: pageSize,
+                        catglist,
                     });
                 } else {
-                    return res.send({ status: "failure", msg: "Your store is currently inactive, please get in touch with the owner!" });
+                    return res.send({
+                        status: "failure",
+                        msg: "Store Count: 0",
+                    });
                 }
             } else {
-                return res.send({ status: "failure", msg: "Store Count: 0" });
+                return res.send({ status: "failure", msg: "Your store is currently inactive, please get in touch with the owner!" });
             }
         } catch (err) {
             console.log(err);
