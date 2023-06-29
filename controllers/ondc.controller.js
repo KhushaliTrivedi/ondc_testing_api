@@ -83,7 +83,6 @@ class adminOndcController {
                         data: store_data,
                         seller: ondc_seller_data
                     });
-
                 } else {
                     return res.send({
                         status: "failure",
