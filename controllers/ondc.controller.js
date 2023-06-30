@@ -344,34 +344,13 @@ class adminOndcController {
     }
 
 
-    // Delete ONDC Store
-    async delete_ondc_store(req, res) {
-        try {
-            const store = await ondc_store.update({ active: false }, {
-                where: { ondc_store_id: req.params.id },
-            });
-            if (store[0]) {
-                return res.json({ status: "success", msg: "Store deleted successfully!" });
-            } else {
-                return res.json({ status: "failure", msg: "deletion failed!" });
-            }
-        } catch (err) {
-            console.log(err);
-            return res.status(500).json({
-                status: "failure",
-                msg: err,
-            });
-        }
-    }
-
-
     // Active Status ONDC Store
     async active_status_ondc_store(req, res) {
         try {
             if (!req.params.id) {
                 return res.send({ status: "failure", msg: "Please provide Store ID!" });
             }
-            
+
             var active = false
             if (req.query.active) {
                 active = req.query.active;
