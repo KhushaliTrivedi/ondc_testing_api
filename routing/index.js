@@ -9,5 +9,6 @@ router.route('/delete_ondc_store/:id').post(adminOndcController.delete_ondc_stor
 router.route('/get_all_ondc_stores').get(adminOndcController.get_all_ondc_stores);
 router.route('/get_single_ondc_stores/:id').get(adminOndcController.get_single_ondc_stores);
 
+router.route('/get_franchise').get(adminOndcController.get_franchise);
 
 module.exports = router;

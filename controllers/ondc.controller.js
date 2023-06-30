@@ -5,7 +5,9 @@ const {
     ondc_store_sellers,
     ondc_store_category,
     ondc_store_products,
-    category_list
+    category_list,
+    branch,
+    franchise
 } = require("../models");
 
 const axios = require("axios");
@@ -18,11 +20,14 @@ class adminOndcController {
             if (!req.body) {
                 return res.send({ status: "failure", msg: "Invalid Data!" });
             }
-            const { access_key, store_url, menu_branch_id } = req.body;
+            const { access_key, store_name } = req.body;
+            const store_url = req.body.store_url = `https://${store_name}.storehippo.com/api/1.1/entity/`;
 
             //  Find if this seller's store exist or not!
             const store = await ondc_store.findOne({
-                where: { access_key, store_url, menu_branch_id },
+                where: {
+                    [Op.or]: [access_key, store_url, store_name]
+                },
             });
 
             if (store) {
@@ -34,6 +39,7 @@ class adminOndcController {
                 // Fetch Seller's Data 
                 let seller_data = {};
                 let is_verified = "";
+                var msg = "";
                 let sellers = await axios
                     .get(
                         `${store_url}ms.sellers`,
@@ -51,16 +57,18 @@ class adminOndcController {
                         console.log(error);
                         if (error.response.status == 401) {
                             is_verified = 0;
-                            return res.json({ status: "failure", msg: "Not Authorised!" });
+                            msg = "Not Authorised!";
                         } else {
                             is_verified = 0;
-                            return res.json({
-                                status: "failure",
-                                msg: "ONDC Store is not Verified!",
-                            });
+                            msg = "ONDC Store is not Verified!";
                         }
                     });
-
+                if (is_verified == 0) {
+                    return res.json({
+                        status: "failure",
+                        msg,
+                    });
+                }
                 if (is_verified == 1) {
                     const s_data = await ondc_store.create(req.body);
                     for (let i = 0; i < seller_data.length; i++) {
@@ -132,6 +140,7 @@ class adminOndcController {
             }
             // Verify Seller_id and access_key
             let is_verified = "";
+            let msg = "";
             let sellers_data = await axios
                 .get(
                     `${store_url}ms.sellers/${mystore_seller_id}`,
@@ -149,24 +158,28 @@ class adminOndcController {
                     console.log(error);
                     if (error.response.status == 404) {
                         is_verified = 0;
-                        return res.json({
-                            status: "failure",
-                            msg: `No ONDC Store is mapped with Seller Id: ${mystore_seller_id}`,
-                        });
+                        msg = `No ONDC Store is mapped with Seller Id: ${mystore_seller_id}`;
                     } else if (error.response.status == 401) {
                         is_verified = 0;
-                        return res.json({ status: "failure", msg: "Not Authorised" });
+                        msg = "Not Authorised";
                     } else {
                         is_verified = 0;
-                        return res.json({
-                            status: "failure",
-                            msg: "ONDC Store is not Verified!",
-                        });
+                        msg = "ONDC Store is not Verified!";
                     }
                 });
-
+            if (is_verified == 0) {
+                return res.json({
+                    status: "failure",
+                    msg,
+                });
+            }
             if (is_verified == 1) {
-                const update_store = await ondc_store.update(req.body, {
+                const excludedColumns = ['store_url', 'access_key', 'menu_branch_id', 'mystore_seller_id', 'sync', 'store_name', 'active'];
+
+                const updateData = { ...req.body };
+                excludedColumns.forEach(column => delete updateData[column]);
+
+                const update_store = await ondc_store.update(updateData, {
                     where: { ondc_store_id: req.params.id, mystore_seller_id: mystore_seller_id },
                 });
 
@@ -318,6 +331,25 @@ class adminOndcController {
             } else {
                 return res.json({ status: "failure", msg: "deletion failed!" });
             }
+        } catch (err) {
+            console.log(err);
+            return res.status(500).json({
+                status: "failure",
+                msg: err,
+            });
+        }
+    }
+
+    // Get Franchise
+    async get_franchise(req, res) {
+        try {
+            const franchise_data = await franchise.findAll({ include: branch });
+            return res.send({
+                status: "Success",
+                msg: "Successfully fetched!",
+                franchise: franchise_data
+            });
+
         } catch (err) {
             console.log(err);
             return res.status(500).json({
