@@ -364,6 +364,57 @@ class adminOndcController {
         }
     }
 
+
+    // Activate ONDC Store
+    async activate_ondc_store(req, res) {
+        try {
+            if (!req.params.id) {
+                return res.send({ status: "failure", msg: "Please provide Store ID!" });
+            }
+
+            const store = await ondc_store.update({ active: true }, {
+                where: { ondc_store_id: req.params.id },
+            });
+            const store_data = await ondc_store.findOne({ where: { ondc_store_id: req.params.id } });
+            if (store[0]) {
+                return res.json({ status: "success", msg: `${store_data.store_name} Store is Active!` });
+            } else {
+                return res.json({ status: "failure", msg: "Please try again later!" });
+            }
+        } catch (err) {
+            console.log(err);
+            return res.status(500).json({
+                status: "failure",
+                msg: err,
+            });
+        }
+    }
+
+    // Deactivate ONDC Store
+    async deactivate_ondc_store(req, res) {
+        try {
+            if (!req.params.id) {
+                return res.send({ status: "failure", msg: "Please provide Store ID!" });
+            }
+
+            const store = await ondc_store.update({ active: false }, {
+                where: { ondc_store_id: req.params.id },
+            });
+            const store_data = await ondc_store.findOne({ where: { ondc_store_id: req.params.id } });
+            if (store[0]) {
+                return res.json({ status: "success", msg: `${store_data.store_name} Store is Deactivated!` });
+            } else {
+                return res.json({ status: "failure", msg: "Please try again later!" });
+            }
+        } catch (err) {
+            console.log(err);
+            return res.status(500).json({
+                status: "failure",
+                msg: err,
+            });
+        }
+    }
+
     // Get Franchise
     async get_franchise(req, res) {
         try {
