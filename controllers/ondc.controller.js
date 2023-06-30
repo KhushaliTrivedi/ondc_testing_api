@@ -213,12 +213,36 @@ class adminOndcController {
     // Get All Registered ONDC Stores
     async get_all_ondc_stores(req, res) {
         try {
-            const store_data = await ondc_store.findAll();
-            if (store_data.length != 0) {
+            let condition = {};
+            let storeData = [];
+            var total_items = 0;
+            if (req.query) {
+                if (
+                    req.query.active &&
+                    req.query.active != ""
+                ) {
+                    storeData.length = 0;
+                    const active = req.query.active;
+                    condition.active = active;
+                }
+
+                const data = await ondc_store.findAndCountAll({
+                    where: condition,
+                });
+                total_items = data.count;
+                storeData.push(data.rows);
+            } else {
+                storeData.length = 0;
+                const data = await ondc_store.findAndCountAll({});
+                total_items = data.count;
+                storeData.push(data.rows);
+            }
+            if (storeData.length > 0 && storeData[0].length != 0) {
                 return res.send({
                     status: "Success",
                     msg: "Successfully fetched!",
-                    branches: store_data,
+                    store_data: storeData,
+                    total_items
                 });
             } else {
                 return res.send({ status: "failure", msg: "Store Count: 0" });
