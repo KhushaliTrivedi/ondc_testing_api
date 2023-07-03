@@ -11,7 +11,7 @@ const {
 } = require("../models");
 
 const axios = require("axios");
-const { add_ondc_store_products } = require("../utils/ondc_func");
+const { add_ondc_store_products, sync_products } = require("../utils/ondc_func");
 
 class adminOndcController {
     //  add ONDC Store
@@ -26,7 +26,7 @@ class adminOndcController {
             //  Find if this seller's store exist or not!
             const store = await ondc_store.findOne({
                 where: {
-                    [Op.or]: [access_key, store_url, store_name]
+                    [Op.or]: { access_key, store_url, store_name }
                 },
             });
 
@@ -396,6 +396,16 @@ class adminOndcController {
                 msg: err,
             });
         }
+    }
+
+
+    // Sync Products on Mystore
+    async sync_store_products(req,res){
+        const data = await sync_products(req.params.id)
+        return res.send({
+            status: "Success",
+            data
+        });
     }
 }
 module.exports = new adminOndcController();

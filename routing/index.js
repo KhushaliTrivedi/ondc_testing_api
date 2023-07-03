@@ -11,4 +11,5 @@ router.route('/get_single_ondc_stores/:id').get(adminOndcController.get_single_o
 
 router.route('/get_franchise').get(adminOndcController.get_franchise);
 
+router.route('/sync_store_products/:id').post(adminOndcController.sync_store_products);
 module.exports = router;
