@@ -41,6 +41,9 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       allowNull: false
     },
+    items_available: {
+      type: DataTypes.INTEGER
+    }
   }, {
     sequelize,
     modelName: 'ondc_store_products',

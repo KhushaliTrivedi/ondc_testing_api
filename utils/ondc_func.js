@@ -1,5 +1,5 @@
 const { default: axios } = require("axios");
-const { ondc_store, ondc_store_category, ondc_store_products, categories, product, product_list, category_list } = require("../models");
+const { ondc_store, ondc_store_category, ondc_store_products, categories, product, product_list, category_list, add_ons, add_on_option, per_product_add_ons } = require("../models");
 const sequelize = require("sequelize");
 function generate_alias(string) {
     const lowercased = string.toLowerCase();
@@ -62,6 +62,7 @@ const sync_products = async (ondc_store_id) => {
     const ondc_categoriesData = await ondc_store_category.findAll({ where: { ondc_store_id }, include: category_list });
     const productData = await ondc_store_products.findAll({ where: { ondc_store_id } });
     const categoryListData = await category_list.findAll({});
+    const per_product_addOns = await per_product_add_ons.findAll({ where: { required: true } });
     let product_structure = [];
     var new_category_list_id = [];
 
@@ -170,15 +171,13 @@ const sync_products = async (ondc_store_id) => {
     for (let i = 0; i < productData.length; i++) {
         const product = productListData.filter(obj => obj.product_list_id === productData[i].product_list_id);
         const ondc_category = new_category_list_id.filter(obj => obj.ondc_cat_id === productData[i].ondc_store_category_id);
+        const addOns_per_prod = per_product_addOns.filter(obj => obj.product_list_id === productData[i].product_list_id);
 
+        console.log( productData[i].items_available);
         // Store ONDC Category ID and Category List ID in separate variables for further reference
-        let ondc_store_category_id = "";
-        let ondc_category_list_id = "";
         let category_alias = "";
         ondc_category.forEach(element => {
             console.log(element);
-            ondc_store_category_id = element.ondc_cat_id;
-            ondc_category_list_id = element.cat_list_id;
             category_alias = element.alias;
         });
 

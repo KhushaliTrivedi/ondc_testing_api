@@ -28,6 +28,9 @@ module.exports = {
         type: DataTypes.UUID,
         allowNull: false
       },
+      items_available: {
+        type: DataTypes.INTEGER
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE
