@@ -63,6 +63,7 @@ const sync_products = async (ondc_store_id) => {
     const productData = await ondc_store_products.findAll({ where: { ondc_store_id } });
     const categoryListData = await category_list.findAll({});
     const per_product_addOns = await per_product_add_ons.findAll({ where: { required: true } });
+    const addOns = await add_ons.findAll({ include: add_on_option });
     let product_structure = [];
     var new_category_list_id = [];
 
@@ -167,17 +168,55 @@ const sync_products = async (ondc_store_id) => {
         // console.log(new_category_list_id);
     };
 
-
+    let options = [];
     for (let i = 0; i < productData.length; i++) {
         const product = productListData.filter(obj => obj.product_list_id === productData[i].product_list_id);
         const ondc_category = new_category_list_id.filter(obj => obj.ondc_cat_id === productData[i].ondc_store_category_id);
         const addOns_per_prod = per_product_addOns.filter(obj => obj.product_list_id === productData[i].product_list_id);
 
-        console.log( productData[i].items_available);
+        addOns_per_prod.forEach(element => {
+            const add_Ons = addOns.filter(obj => obj.add_ons_id === element.add_ons_id);
+            options.push(add_Ons);
+            console.log(add_Ons);
+            let options_data = [];
+            for (let i = 0; i < add_Ons.length; i++) {
+                let values = [];
+                values.length = 0;
+                for (let j = 0; j < add_Ons[i].add_on_options.length; j++) {
+                    values.push(add_Ons[i].add_on_options[j].title);
+                }
+                options_data = [
+                    {
+                        "name": add_Ons[i].title,
+                        "values": values
+                    }
+                ]
+                const data = {
+                    "price": "300",
+                    "compare_price": "350",
+                    "sku": "TSHIRT_S_BLUE",
+                    "inventory_management": "automatic",
+                    "inventory_quantity": 2,
+                    "options": [
+                        {
+                            "name": "color",
+                            "value": "blue"
+                        },
+                        {
+                            "name": "size",
+                            "value": "S"
+                        }
+                    ],
+                    "variant_id": "S-blue"
+                };
+                console.log(options_data);
+            }
+
+        });
         // Store ONDC Category ID and Category List ID in separate variables for further reference
         let category_alias = "";
         ondc_category.forEach(element => {
-            console.log(element);
+            // console.log(element);
             category_alias = element.alias;
         });
 
@@ -217,10 +256,10 @@ const sync_products = async (ondc_store_id) => {
                 "seller": storeData.mystore_seller_id,
             }
             // product_structure.push(struct);
-            console.log(struct)
+            // console.log(struct)
         });
     }
-    return 1;
+    return options;
 }
 
 
