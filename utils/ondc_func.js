@@ -15,6 +15,9 @@ function generate_sku(string) {
     return replaced;
 }
 
+function removeDuplicates(arr1, arr2) {
+    return arr1.filter(value => !arr2.includes(value));
+}
 
 // Add ONDC Store Products Function
 const add_ondc_store_products = async (body, store_data) => {
@@ -50,11 +53,7 @@ const add_ondc_store_products = async (body, store_data) => {
     }
     await ondc_store_products.bulkCreate(array_product);
 }
-function removeDuplicates(arr1, arr2) {
-    console.log(arr1)
-    console.log(arr2)
-    return arr1.filter(value => !arr2.includes(value));
-}
+
 
 // Sync Products/Categories with Mystore
 const sync_products = async (ondc_store_id) => {
