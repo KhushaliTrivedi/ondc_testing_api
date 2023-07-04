@@ -50,7 +50,11 @@ const add_ondc_store_products = async (body, store_data) => {
     }
     await ondc_store_products.bulkCreate(array_product);
 }
-
+function removeDuplicates(arr1, arr2) {
+    console.log(arr1)
+    console.log(arr2)
+    return arr1.filter(value => !arr2.includes(value));
+}
 
 // Sync Products/Categories with Mystore
 const sync_products = async (ondc_store_id) => {
@@ -95,123 +99,88 @@ const sync_products = async (ondc_store_id) => {
         });
     }
 
+    let filtered_alias = [];
     let alias_data = [];
     for (let k = 0; k < ondc_categoriesData.length; k++) {
         const alias = generate_alias(ondc_categoriesData[k].category_list.category_name);
         alias_data.push(alias);
     }
-
     if (mystore_categories.length !== 0 && mystore_categories !== null) {
-        let arr = [];
+        let mystore_alias_data = [];
         for (let i = 0; i < mystore_categories.length; i++) {
-            // const foundCategory = alias_data.find(alias => alias === mystore_categories[i].alias);
-            // console.log(foundCategory);
-            // if (foundCategory) {
-            const filteredArray = alias_data.filter(element => element !== mystore_categories[i].alias);
-            filteredArray.forEach(e => {
-                console.log(e)
-                if(e !== mystore_categories[i].alias){
-                    arr.push(e); 
-                }
-            });
-            // }
+            mystore_alias_data.push(mystore_categories[i].alias);
         }
-        // const uniqueArray = arr.filter((value, index, array) => array.indexOf(value) === index);
-        console.log(arr);
+        filtered_alias = removeDuplicates(alias_data, mystore_alias_data);
+        console.log(filtered_alias)
+    } else {
+
+        filtered_alias = alias_data;
     }
-    // for (let k = 0; k < ondc_categoriesData.length; k++) {
-    //     const alias = generate_alias(ondc_categoriesData[k].category_list.category_name);
 
-    //     if (mystore_categories.length !== 0 && mystore_categories !== null) {
-    //         const foundCategory = mystore_categories.find(category => category.alias === alias);
-    //         // console.log(foundCategory);
-    //         // if (foundCategory) {
-    //         //     console.log(foundCategory.alias);
-    //         //     if (foundCategory.alias !== alias) {
-    //         //         console.log(alias);
-    //         //     }
-    //         // }
-    //         for (let i = 0; i < mystore_categories.length; i++) {
-    //             let data = {};
-    //             if (alias !== mystore_categories[i].alias) {
-    //                 // console.log(alias)
-    //                 // console.log(mystore_categories[i].alias)
-    //                 data = {
-    //                     name: ondc_categoriesData[k].category_list.category_name,
-    //                     alias: alias,
-    //                     description: ondc_categoriesData[k].category_list.description,
-    //                     images: [
-    //                         {
-    //                             "image": ondc_categoriesData[k].category_list.card_img
-    //                         }
-    //                     ],
-    //                     publish: 1
-    //                 };
-    //                 // console.log(data, 'data');
-    //             }
-    //             if (data.length !== 0 && data !== null) {
-    //                 // console.log('here in data')
-    //                 // const mystore_category = await axios.post(`${storeData.store_url}ms.categories`, data, {
-    //                 //     headers: {
-    //                 //         "access-key": storeData.access_key,
-    //                 //     },
-    //                 // })
-    //                 // console.log(mystore_category.data)
-    //             }
-    //             // var ondc_categories_list = await ondc_store_category.update({
-    //             //     mystore_category_id: mystore_category.data.data._id
-    //             // }, { where: { ondc_store_id } });
-    //             // new_category_list_id.push({
-    //             //     'cat_list_id': ondc_categories_list.dataValues.category_list_id,
-    //             //     'ondc_cat_id': ondc_categories_list.dataValues.ondc_category_id,
-    //             //     'mystore_cat_id': ondc_categories_list.dataValues.mystore_category_id
-    //             // })
-    //         }
-    //     } else {
-    //         console.log('ELSE')
-    //         const data = {
-    //             name: ondc_categoriesData[k].category_list.category_name,
-    //             alias: alias,
-    //             description: ondc_categoriesData[k].category_list.description,
-    //             images: [
-    //                 {
-    //                     "image": ondc_categoriesData[k].category_list.card_img
-    //                 }
-    //             ],
-    //             publish: 1
-    //         };
-    //         console.log(data);
-    //         if (data.length !== 0 && data !== null) {
+    for (let k = 0; k < ondc_categoriesData.length; k++) {
+        const alias = generate_alias(ondc_categoriesData[k].category_list.category_name);
 
-    //             const mystore_category = await axios.post(`${storeData.store_url}ms.categories`, data, {
-    //                 headers: {
-    //                     "access-key": storeData.access_key,
-    //                 },
-    //             })
-    //             console.log(mystore_category.data)
-    //         }
-    //         // var ondc_categories_list = await ondc_store_category.update({
-    //         //     mystore_category_id: mystore_category.data.data._id
-    //         // }, { where: { ondc_store_category_id: ondc_categoriesData[k].ondc_store_category_id, ondc_store_id } });
-    //         // new_category_list_id.push({
-    //         //     'cat_list_id': ondc_categories_list.dataValues.category_list_id,
-    //         //     'ondc_cat_id': ondc_categories_list.dataValues.ondc_category_id,
-    //         //     'mystore_cat_id': ondc_categories_list.dataValues.mystore_category_id
-    //         // })
-    //     }
-    // };
+        if (filtered_alias.includes(alias)) {
+            console.log('IF')
+            const data = {
+                name: ondc_categoriesData[k].category_list.category_name,
+                alias: alias,
+                description: ondc_categoriesData[k].category_list.description,
+                images: [
+                    {
+                        "image": ondc_categoriesData[k].category_list.card_img
+                    }
+                ],
+                publish: 1
+            };
+            // console.log(data);
+            if (data.length !== 0 && data !== null) {
+
+                const mystore_category = await axios.post(`${storeData.store_url}ms.categories`, data, {
+                    headers: {
+                        "access-key": storeData.access_key,
+                    },
+                })
+                var ondc_categories_list = await ondc_store_category.update({
+                    ondc_catg_id: mystore_category.data.data._id,
+                }, { where: { ondc_store_category_id: ondc_categoriesData[k].ondc_store_category_id } });
+                // console.log(mystore_category.data)
+                new_category_list_id.push({
+                    'cat_list_id': ondc_categoriesData[k].category_list.category_list_id,
+                    'ondc_cat_id': ondc_categoriesData[k].ondc_store_category_id,
+                    'mystore_cat_id': mystore_category.data.data._id,
+                    "alias": alias
+                })
+            }
+
+        } else {
+            console.log('ELSE')
+            const ondc_categories_list = await ondc_store_category.findOne({ where: { ondc_store_category_id: ondc_categoriesData[k].ondc_store_category_id } })
+            new_category_list_id.push({
+                'cat_list_id': ondc_categories_list.category_list_id,
+                'ondc_cat_id': ondc_categories_list.ondc_store_category_id,
+                'mystore_cat_id': ondc_categories_list.ondc_catg_id,
+                "alias": alias
+            })
+        }
+
+        // console.log(new_category_list_id);
+    };
 
 
     for (let i = 0; i < productData.length; i++) {
         const product = productListData.filter(obj => obj.product_list_id === productData[i].product_list_id);
-        const ondc_category = ondc_categoriesData.filter(obj => obj.ondc_category_id === productData[i].ondc_category_id);
+        const ondc_category = new_category_list_id.filter(obj => obj.ondc_cat_id === productData[i].ondc_store_category_id);
 
         // Store ONDC Category ID and Category List ID in separate variables for further reference
-        let ondc_category_id = "";
+        let ondc_store_category_id = "";
         let ondc_category_list_id = "";
+        let category_alias = "";
         ondc_category.forEach(element => {
-            ondc_category_id = element.dataValues.ondc_category_id;
-            ondc_category_list_id = element.dataValues.category_list_id;
+            console.log(element);
+            ondc_store_category_id = element.ondc_cat_id;
+            ondc_category_list_id = element.cat_list_id;
+            category_alias = element.alias;
         });
 
         // Store Category Name in separate variables for further reference
@@ -220,9 +189,6 @@ const sync_products = async (ondc_store_id) => {
         category.forEach(element => {
             cat_name = element.dataValues.category_name;
         });
-
-        // Generate alias of category
-        let category_alias = generate_alias(cat_name);
 
         product.forEach(element => {
             // product_structure.length = 0;
@@ -259,8 +225,8 @@ const sync_products = async (ondc_store_id) => {
                 "approve": "approved",
                 "seller": storeData.mystore_seller_id,
             }
-            product_structure.push(struct);
-            // console.log(product_structure)
+            // product_structure.push(struct);
+            console.log(struct)
         });
     }
     return 1;
