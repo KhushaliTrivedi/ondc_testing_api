@@ -182,13 +182,6 @@ const sync_products = async (ondc_store_id) => {
             category_alias = element.alias;
         });
 
-        // Store Category Name in separate variables for further reference
-        let cat_name = "";
-        const category = categoryListData.filter(obj => obj.category_list_id === ondc_category_list_id);
-        category.forEach(element => {
-            cat_name = element.dataValues.category_name;
-        });
-
         product.forEach(element => {
             // product_structure.length = 0;
             let alias = generate_alias(element.dataValues.product_name);
