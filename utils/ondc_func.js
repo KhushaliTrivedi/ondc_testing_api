@@ -241,21 +241,6 @@ const sync_products = async (ondc_store_id) => {
                         }
                     }
                 ],
-                "variants": [
-                    {
-                        "price": "300",
-                        "sku": "TSHIRT_BLUE",
-                        "inventory_management": "automatic",
-                        "inventory_quantity": 2,
-                        "options": [
-                            {
-                                "name": "color",
-                                "value": "blue"
-                            }
-                        ],
-                        "variant_id": "blue"
-                    }
-                ],
                 "enable_ondc_sync": 1,
                 "location_availability_mode": storeData.location_availability_mode,
                 [storeData.location_availability_mode]: storeData.location_availability_array,
