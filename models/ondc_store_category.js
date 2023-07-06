@@ -32,7 +32,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     ondc_catg_id: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: true
+    },
+    ondc_catg_name: {
+      type: DataTypes.STRING,
     },
   }, {
     sequelize,

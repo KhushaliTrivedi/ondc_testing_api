@@ -10,23 +10,22 @@ module.exports = {
         allowNull: false
       },
       ondc_catg_id: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: DataTypes.ARRAY(DataTypes.STRING)
+      },
+      ondc_catg_names: {
+        type: DataTypes.ARRAY(DataTypes.STRING)
       },
       ondc_product_id: {
         type: DataTypes.STRING,
       },
       ondc_store_id: {
         type: DataTypes.UUID,
-        allowNull: false
       },
       ondc_store_category_id: {
-        type: DataTypes.UUID,
-        allowNull: false
+        type: DataTypes.ARRAY(DataTypes.UUID)
       },
       product_list_id: {
         type: DataTypes.UUID,
-        allowNull: false
       },
       items_available: {
         type: DataTypes.INTEGER

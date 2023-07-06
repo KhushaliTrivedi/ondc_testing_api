@@ -400,12 +400,32 @@ class adminOndcController {
 
 
     // Sync Products on Mystore
-    async sync_store_products(req,res){
+    async sync_store_products(req, res) {
         const data = await sync_products(req.params.id)
         return res.send({
             status: "Success",
             data
         });
+    }
+
+    // TEST DELETE
+    async test_del(req, res) {
+        try {
+            await ondc_store.destroy({ where: {} });
+            await ondc_store_category.destroy({ where: {} });
+            await ondc_store_sellers.destroy({ where: {} });
+            await ondc_store_products.destroy({ where: {} });
+            return res.send({
+                status: "Success",
+                data: ondc_store,
+            });
+        } catch (err) {
+            console.log(err);
+            return res.status(500).json({
+                status: "failure",
+                msg: err,
+            });
+        }
     }
 }
 module.exports = new adminOndcController();
