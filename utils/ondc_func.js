@@ -269,32 +269,11 @@ const sync_products = async (ondc_store_id) => {
             }
             const currentVariant = variants[index];
             const variantOptions = currentVariant.options;
-            const options_id = currentVariant.add_on_option_id;
-            // console.log(currentVariant.add_on_option_id)
-            if(options_id != undefined){
-                for (let i = 0; i < options_id.length; i++) {
-                    // console.log(options_id[i]);
-                    const data = addOnsOptions.filter(obj => obj.add_on_options === options_id[i]);
-                    // console.log(data);
-                }
-            }
 
             for (let i = 0; i < variantOptions.length; i++) {
                 const option = variantOptions[i];
                 const newVariation = { ...currentVariation, [currentVariant.name]: option };
-                // const var_data = {
-                //     "price": "300",
-                //     "sku": "ABC_S",
-                //     "inventory_management": "automatic",
-                //     "inventory_quantity": 2,
-                //     "options": [
-                //         {
-                //             "name": "size",
-                //             "value": "S"
-                //         }
-                //     ],
-                //     "variant_id": "S"
-                // };
+                
                 // console.log(newVariation);
                 generateVariations(variants, newVariation, index + 1, variations);
             }
