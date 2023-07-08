@@ -13,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       this.belongsTo(models.ondc_store, { foreignKey: 'ondc_store_id' });
       this.belongsTo(models.ondc_store_category, { foreignKey: 'ondc_store_category_id' });
+      this.belongsTo(models.product_list, { foreignKey: 'product_list_id' });
     }
   }
   ondc_store_products.init({
@@ -40,9 +41,16 @@ module.exports = (sequelize, DataTypes) => {
     product_list_id: {
       type: DataTypes.UUID,
     },
-    items_available: {
-      type: DataTypes.INTEGER
-    }
+    product_name: {
+      type: DataTypes.STRING,
+    },
+    price: {
+      type: DataTypes.FLOAT,
+    },
+    inventory_quantity: {
+      type: DataTypes.INTEGER,
+      defaultValue: 1000
+    },
   }, {
     sequelize,
     modelName: 'ondc_store_products',

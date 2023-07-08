@@ -11,7 +11,8 @@ const {
 } = require("../models");
 
 const axios = require("axios");
-const { add_ondc_store_products, sync_products } = require("../utils/ondc_func");
+// const { add_ondc_store_products, sync_products } = require("../utils/ondc_func");
+const ondcfn = require("../utils/ondc_func");
 
 class adminOndcController {
     //  add ONDC Store
@@ -82,7 +83,10 @@ class adminOndcController {
                             await ondc_store.update({ mystore_seller_id: seller_data[i].user._id }, { where: { ondc_store_id: s_data.ondc_store_id } })
                         }
                     }
-                    add_ondc_store_products(req.body, s_data);
+                    ondcfn.add_ondc_store_products({
+                        menu_branch_id: req.body.menu_branch_id,
+                        ondc_store_id: s_data.ondc_store_id,
+                    });
                     const store_data = await ondc_store.findOne({ where: { ondc_store_id: s_data.ondc_store_id } })
                     const ondc_seller_data = await ondc_store_sellers.findAll({ where: { ondc_store_id: s_data.ondc_store_id } })
                     return res.send({
@@ -401,7 +405,7 @@ class adminOndcController {
 
     // Sync Products on Mystore
     async sync_store_products(req, res) {
-        const data = await sync_products(req.params.id)
+        const data = await ondcfn.sync_products(req.params.id)
         return res.send({
             status: "Success",
             data

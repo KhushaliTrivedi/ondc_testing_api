@@ -20,10 +20,9 @@ function removeDuplicates(arr1, arr2) {
 }
 
 // Add ONDC Store Products Function
-const add_ondc_store_products = async (body, store_data) => {
+const add_ondc_store_products = async (body) => {
 
-    const { menu_branch_id } = body;
-    const ondc_store_id = store_data.ondc_store_id;
+    const { menu_branch_id, ondc_store_id } = body;
     var array_product = [];
 
     //  Find categories data based on branch_id
@@ -33,6 +32,9 @@ const add_ondc_store_products = async (body, store_data) => {
             { model: category_list },
             {
                 model: product,
+                include: {
+                    model: product_list
+                }
             },
         ],
         // raw:true
@@ -42,27 +44,17 @@ const add_ondc_store_products = async (body, store_data) => {
         //
         var ondc_categories_list = await ondc_store_category.create({
             category_list_id: categoryData[i].category_list.category_list_id,
-            // ondc_store_id: "64f36436-692d-465a-964a-164bd67b18c0",
             ondc_store_id,
             ondc_catg_name: categoryData[i].category_list.category_name,
-
-            // ondc_catg_id: mystore_category.data.data._id,
         });
-        //   console.log(categoryData[i].products.length);
+        console.log(categoryData[i].products.length);
         for (var j = 0; j < categoryData[i].products.length; j++) {
-            // console.log("j", j);
-            array_product.find(async (item) => {
-                if (
-                    item.product_list_id == categoryData[i].products[j].product_list_id
-                ) {
-                    return item;
-                }
-            });
+
             const index = array_product.findIndex(
                 (obj) =>
                     obj.product_list_id == categoryData[i].products[j].product_list_id
             );
-
+            // console.log( categoryData[i].products[j].product_list.price + categoryData[i].products[j].price,)
             // If the object is found, update it with the provided data
             if (index !== -1) {
                 // array_product[index] = { ...arr[index], ...updatedData };
@@ -78,35 +70,41 @@ const add_ondc_store_products = async (body, store_data) => {
                         ...array_product[index].ondc_store_category_id,
                     ],
                     product_list_id: categoryData[i].products[j].product_list_id,
+                    product_name: array_product[index].product_name,
+                    inventory_quantity: array_product[index].inventory_quantity,
+                    price: array_product[index].price,
                 };
                 array_product[index] = tjh;
             } else {
+                // console.log( categoryData[i].products[j],categoryData[i].products[j].product_list[0].product_name)
+                let pr = 1;
+                if (categoryData[i].products[j].product_list.price > 0) pr = categoryData[i].products[j].product_list.price
                 array_product.push({
                     ondc_store_id,
                     ondc_catg_id: [],
                     ondc_catg_names: [ondc_categories_list.ondc_catg_name],
                     ondc_store_category_id: [ondc_categories_list.ondc_store_category_id],
                     product_list_id: categoryData[i].products[j].product_list_id,
-                    product_list_id: categoryData[i].products[j].product_list_id,
-                    items_available: categoryData[i].products[j].items_available,
+                    // product_list price,product_name, items_available, price
+                    product_name: categoryData[i].products[j].product_list.product_name,
+                    inventory_quantity: categoryData[i].products[j].items_available,
+                    price: categoryData[i].products[j].product_list.price,
                 });
             }
         }
     }
 
-    // console.log("1", 34, array_product);
     await ondc_store_products.bulkCreate(array_product);
-    // console.log("1", 34, array_product.length);
 }
 
 
 // Sync Products/Categories with Mystore
 const sync_products = async (ondc_store_id) => {
     const storeData = await ondc_store.findOne({ where: { ondc_store_id } });
-    const productListData = await product_list.findAll({});
+    // const productListData = await product_list.findAll({});
     const ondc_categoriesData = await ondc_store_category.findAll({ where: { ondc_store_id }, include: category_list });
-    const productData = await ondc_store_products.findAll({ where: { ondc_store_id } });
-    const categoryListData = await category_list.findAll({});
+    const productData = await ondc_store_products.findAll({ where: { ondc_store_id }, include: product_list });
+    // const categoryListData = await category_list.findAll({});
     const per_product_addOns = await per_product_add_ons.findAll({ where: { required: true } });
     const addOns = await add_ons.findAll({ include: add_on_option });
     const addOnsOptions = await add_on_option.findAll({});
@@ -222,7 +220,6 @@ const sync_products = async (ondc_store_id) => {
 
         // console.log(addOns_per_prod)
         let options_data = [];
-        let options_data_var = [];
         let data = {};
         addOns_per_prod.forEach(element => {
             data.length = 0;
@@ -230,6 +227,7 @@ const sync_products = async (ondc_store_id) => {
             options.push(add_Ons);
         });
         let options_d = [];
+        let options_data_var = [];
         for (let i = 0; i < options.length; i++) {
             let add_on_title = "";
             let values = [];
@@ -247,7 +245,7 @@ const sync_products = async (ondc_store_id) => {
                 });
                 options_data_var.push({
                     "name": add_on_title,
-                    "values": values,
+                    "options": values,
                     "add_on_option_id": add_on_option_id
                 })
             })
@@ -260,7 +258,7 @@ const sync_products = async (ondc_store_id) => {
         });
         // console.dir(options_data, { depth: null })
 
-        const variations = generateVariations(options_d);
+        const variations = generateVariations(options_data_var);
         console.log(variations);
 
         // Variations
@@ -269,13 +267,35 @@ const sync_products = async (ondc_store_id) => {
                 variations.push(currentVariation);
                 return;
             }
-
             const currentVariant = variants[index];
             const variantOptions = currentVariant.options;
+            const options_id = currentVariant.add_on_option_id;
+            // console.log(currentVariant.add_on_option_id)
+            if(options_id != undefined){
+                for (let i = 0; i < options_id.length; i++) {
+                    // console.log(options_id[i]);
+                    const data = addOnsOptions.filter(obj => obj.add_on_options === options_id[i]);
+                    // console.log(data);
+                }
+            }
 
             for (let i = 0; i < variantOptions.length; i++) {
                 const option = variantOptions[i];
                 const newVariation = { ...currentVariation, [currentVariant.name]: option };
+                // const var_data = {
+                //     "price": "300",
+                //     "sku": "ABC_S",
+                //     "inventory_management": "automatic",
+                //     "inventory_quantity": 2,
+                //     "options": [
+                //         {
+                //             "name": "size",
+                //             "value": "S"
+                //         }
+                //     ],
+                //     "variant_id": "S"
+                // };
+                // console.log(newVariation);
                 generateVariations(variants, newVariation, index + 1, variations);
             }
             return variations;
@@ -284,67 +304,67 @@ const sync_products = async (ondc_store_id) => {
     }
 
     for (let i = 0; i < productData.length; i++) {
-        const product = productListData.filter(obj => obj.product_list_id === productData[i].product_list_id);
-        const ondc_category = new_category_list_id.filter(obj => obj.ondc_store_category_id === productData[i].ondc_store_category_id);
-
+        // const product = productListData.filter(obj => obj.product_list_id === productData[i].product_list_id);
         // Store ONDC Category ID and Category List ID in separate variables for further reference
-        let category_alias = "";
-        ondc_category.forEach(element => {
-            // console.log(element);
-            category_alias = element.alias;
+        let category_alias = [];
+        productData[i].ondc_store_category_id.forEach(element => {
+            const ondc_category = new_category_list_id.filter(obj => obj.ondc_store_category_id === element);
+            ondc_category.forEach(element => {
+                // console.log(element);
+                category_alias.push(element.alias);
+            });
+            // console.log(category_alias)
         });
 
-        product.forEach(element => {
-            const options = get_add_ons_options(element.dataValues.product_list_id, element.dataValues.price, productData[i].items_available)
-            let options_data = [];
-            let variants_data = [];
-            options.forEach(element => {
-                if (element.options && element.options.length > 0) {
-                    options_data.push(element.options);
-                }
-                if (element.variants && element.variants.length > 0) {
-                    variants_data.push(element.variants);
-                }
-            });
-            // product_structure.length = 0;
-            let alias = generate_alias(element.dataValues.product_name);
-            let sku = generate_sku(element.dataValues.product_name);
-            struct = {
-                "name": element.dataValues.product_name,
-                "description": element.dataValues.description,
-                "alias": alias,
-                "sku": sku,
-                "price": element.dataValues.price,
-                "categories": [
-                    category_alias
-                ],
-                "options": options_data,
-                "variants": variants_data,
-                "shipping_cost": 10,
-                "publish": "1",
-                "inventory_quantity": productData[i].items_available,
-                "images": [
-                    {
-                        "image": {
-                            "data": element.dataValues.card_img,
-                            "uploadType": "url",
-                        }
-                    }
-                ],
-                "enable_ondc_sync": 1,
-                "location_availability_mode": storeData.location_availability_mode,
-                [storeData.location_availability_mode]: storeData.location_availability_array,
-                "country_of_origin": "IN",
-                "ondc": {
-                    "cancellable": "yes",
-                    "returnable": "no"
-                },
-                "approve": "approved",
-                "seller": storeData.mystore_seller_id,
+        // product.forEach(element => {
+        const options = get_add_ons_options(productData[i].product_list.product_list_id, productData[i].product_list.price, productData[i].items_available)
+        let options_data = [];
+        let variants_data = [];
+        options.forEach(element => {
+            if (element.options && element.options.length > 0) {
+                options_data.push(element.options);
             }
-            // product_structure.push(struct);
-            // console.log(struct)
+            if (element.variants && element.variants.length > 0) {
+                variants_data.push(element.variants);
+            }
         });
+        // product_structure.length = 0;
+        let alias = generate_alias(productData[i].product_list.product_name);
+        let sku = generate_sku(productData[i].product_list.product_name);
+        struct = {
+            "name": productData[i].product_list.product_name,
+            "description": productData[i].product_list.description,
+            "alias": alias,
+            "sku": sku,
+            "price": productData[i].product_list.price,
+            "categories": category_alias,
+            "options": options_data,
+            "variants": variants_data,
+            "shipping_cost": 10,
+            "publish": "1",
+            "inventory_quantity": productData[i].inventory_quantity,
+            "images": [
+                {
+                    "image": {
+                        "data": productData[i].product_list.card_img,
+                        "uploadType": "url",
+                    }
+                }
+            ],
+            "enable_ondc_sync": 1,
+            "location_availability_mode": storeData.location_availability_mode,
+            [storeData.location_availability_mode]: storeData.location_availability_array,
+            "country_of_origin": "IN",
+            "ondc": {
+                "cancellable": "yes",
+                "returnable": "no"
+            },
+            "approve": "approved",
+            "seller": storeData.mystore_seller_id,
+        }
+        // product_structure.push(struct);
+        // console.log(struct)
+        // });
     }
     return 1;
 }
