@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      // this.hasOne(models.categories,{foreignKey:'category_list_id'})
+      this.hasOne(models.categories,{foreignKey:'category_list_id'})
     }
   }
   category_list.init({

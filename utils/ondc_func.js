@@ -1,5 +1,5 @@
 const { default: axios } = require("axios");
-const { ondc_store, ondc_store_category, ondc_store_products, categories, product, product_list, category_list, add_ons, add_on_option, per_product_add_ons } = require("../models");
+const { ondc_store, ondc_store_category, ondc_store_products, categories, product, product_list, category_list, add_ons, add_on_option, per_product_add_ons, ondc_products_options } = require("../models");
 const sequelize = require("sequelize");
 function generate_alias(string) {
     const lowercased = string.toLowerCase();
@@ -24,6 +24,8 @@ const add_ondc_store_products = async (body) => {
 
     const { menu_branch_id, ondc_store_id } = body;
     var array_product = [];
+    var array_product_options = [];
+
 
     //  Find categories data based on branch_id
     const categoryData = await categories.findAll({
@@ -95,6 +97,86 @@ const add_ondc_store_products = async (body) => {
     }
 
     await ondc_store_products.bulkCreate(array_product);
+    var array_product1 = await ondc_store_products.findAll({
+        where: {
+            ondc_store_id
+        },
+        raw: true
+    });
+    const productlist = await product_list.findAll({
+        where: {
+            product_list_id: array_product1.map((item) => item.product_list_id),
+        },
+        include: {
+            model: per_product_add_ons,
+            // separate: true,
+            where: {
+                required: true,
+            },
+            order: [["createdAt", "ASC"]],
+            include: {
+                model: add_ons,
+                include: {
+                    model: add_on_option,
+                },
+            },
+        },
+    });
+    // var okh = [];
+    for (var m = 0; m < productlist.length; m++) {
+        var okh = [];
+        var ondc_store_products_id = "";
+        // var dt = await array_product1.find(async(age)=>{
+        //   return age.product_list_id  == productlist[m].product_list_id;
+        // })
+        // if(dt){
+        //   console.log("dt.ondc_store_products_id",dt.ondc_store_products_id)
+        //   ondc_store_products_id = dt.ondc_store_products_id
+        // }
+        for (var n = 0; n < productlist[m].per_product_add_ons.length; n++) {
+            // console.log(productlist[m].per_product_add_ons[n].add_on)
+            var arr1 = [];
+            var name = "";
+            for (var l = 0; l < productlist[m].per_product_add_ons[n].add_on.add_on_options.length; l++) {
+                name = productlist[m].per_product_add_ons[n].add_on.title;
+                console.log(
+                    "productlist[m].per_product_add_ons[n].add_ons.ondc_products_options",
+                    productlist[m].per_product_add_ons[n].add_on.add_on_options[l].sku
+                );
+                arr1.push(
+                    productlist[m].per_product_add_ons[n].add_on.add_on_options[l].title
+                );
+            }
+            okh.push({
+                name,
+                values: arr1,
+            });
+        }
+        // await ondc_products_options.create(})
+        // console.log("dt",dt,productlist[m].product_list_id)
+        // if( ondc_store_products_id == "" ){
+        //   array_product_options.push({
+        //     options: okh,
+        //     ondc_store_id,
+        //     product_list_id: productlist[m].product_list_id,
+        // })
+        // }else{
+        //   array_product_options.push({
+        //     options: okh,
+        //     ondc_store_id,
+        //     ondc_store_products_id,
+        //     product_list_id: productlist[m].product_list_id,
+        // })
+        // }
+        array_product_options.push({
+            options: okh,
+            ondc_store_id,
+            product_list_id: productlist[m].product_list_id,
+        })
+
+    }
+    await ondc_products_options.bulkCreate(array_product_options);
+    console.log(productlist.length, array_product1.length)
 }
 
 
@@ -273,7 +355,7 @@ const sync_products = async (ondc_store_id) => {
             for (let i = 0; i < variantOptions.length; i++) {
                 const option = variantOptions[i];
                 const newVariation = { ...currentVariation, [currentVariant.name]: option };
-                
+
                 // console.log(newVariation);
                 generateVariations(variants, newVariation, index + 1, variations);
             }

@@ -11,9 +11,9 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      // this.hasMany(models.product, { foreignKey: 'product_list_id' });
-      //this.hasMany(models.add_ons,{foreignKey:'product_list_id'});
-      // this.hasMany(models.per_product_add_ons, { foreignKey: 'product_list_id' });
+      this.hasMany(models.product, { foreignKey: 'product_list_id' });
+      // this.hasMany(models.add_ons, { foreignKey: 'product_list_id' });
+      this.hasMany(models.per_product_add_ons, { foreignKey: 'product_list_id' });
     }
   }
   product_list.init({
